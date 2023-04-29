@@ -88,12 +88,12 @@ namespace ChestSort
             InitSorters();
             await Task.Delay(100);
 
-            player.SendWarningMessage("Checking {0} regions to sort", Sorters.Count);
+            //player.SendWarningMessage("Checking {0} regions to sort", Sorters.Count);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(player.ActiveChest))
                 {
-                    player.SendWarningMessage("Sorting {0}", sorter.Region.Name);
+                    //player.SendWarningMessage("Sorting {0}", sorter.Region.Name);
                     await sorter.sort();
                     return;
                 }
@@ -162,11 +162,11 @@ namespace ChestSort
             if(ChestID < 0 && player.ActiveChest >= 0)
             {
                 ChestClose?.Invoke(this, new ChestCloseEventArgs(player, (short)player.ActiveChest));
-                Console.WriteLine("Chest close: {0}", player.ActiveChest);
+                //Console.WriteLine("Chest close: {0}", player.ActiveChest);
                 return false;
             }
 
-            Console.WriteLine("Chest Open: {0}", ChestID);
+            //Console.WriteLine("Chest Open: {0}", ChestID);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(ChestID) && sorter.sorting)
@@ -181,7 +181,7 @@ namespace ChestSort
         private bool ChestGetContentsHandler(TSPlayer player, short xpos, short ypos)
         {
             InitSorters();
-            Console.WriteLine("Get Contents: ({0}, {1})", xpos, ypos);
+            //Console.WriteLine("Get Contents: ({0}, {1})", xpos, ypos);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(xpos, ypos) && sorter.sorting)
@@ -196,7 +196,7 @@ namespace ChestSort
         private bool ChestItemHandler(TSPlayer player, short ChestID)
         {
             InitSorters();
-            Console.WriteLine("Chest Item: {0}", ChestID);
+            //Console.WriteLine("Chest Item: {0}", ChestID);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(ChestID) && sorter.sorting)
