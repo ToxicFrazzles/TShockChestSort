@@ -7,6 +7,20 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI.DB;
 using System.IO.Streams;
+using static MonoMod.InlineRT.MonoModRule;
+
+
+public class ChestCloseEventArgs
+{
+    public ChestCloseEventArgs(TSPlayer player, short chestID)
+    {
+        Player = player;
+        ChestID = chestID;
+    }
+
+    public TSPlayer Player { get; }
+    public short ChestID { get; }
+}
 
 namespace ChestSort
 {
@@ -16,9 +30,12 @@ namespace ChestSort
         public override string Author => "ToxicFrazzles";
         public override string Description => "A plugin to sort items in chests";
         public override string Name => "Chest Sort";
-        public override Version Version => new Version(1,0,0,0);
+        public override Version Version => new Version(1,0,1,0);
 
         private List<Sorter>? Sorters = null;
+
+        public delegate void ChestCloseEventHandler(object sender, ChestCloseEventArgs args);
+        public event ChestCloseEventHandler ChestClose;
 
         public ChestSortPlugin(Main game) : base(game)
         {
@@ -30,10 +47,14 @@ namespace ChestSort
             ServerApi.Hooks.GameInitialize.Register(this, OnGameInitialize);
             TShockAPI.Hooks.RegionHooks.RegionCreated += OnRegionCreated;
             TShockAPI.Hooks.RegionHooks.RegionDeleted += OnRegionDeleted;
+
+            //Sorters = new List<Sorter>();
         }
         private void OnGameInitialize(EventArgs args)
         {
+            // Add the "sort" command to the chat commands
             Commands.ChatCommands.Add(new Command(SortCMD, "sort"));
+
         }
 
 
@@ -44,22 +65,36 @@ namespace ChestSort
                 args.Player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
                 return;
             }
-            if(Sorters == null)
+
+            await sort(args.Player);
+        }
+
+
+        private void InitSorters()
+        {
+            // Ensure the list of sorters has been initialised
+            if (Sorters == null)
             {
                 Sorters = new List<Sorter>();
                 foreach (Region region in TShock.Regions.Regions)
                 {
-                    Sorters.Add(new Sorter(region));
+                    Sorters.Add(new Sorter(this, region));
                 }
             }
+        }
 
-            //args.Player.SendWarningMessage("Checking {0} regions to sort", Sorters.Count);
-            foreach(Sorter sorter in Sorters)
+        private async Task sort(TSPlayer player)
+        {
+            InitSorters();
+            await Task.Delay(100);
+
+            player.SendWarningMessage("Checking {0} regions to sort", Sorters.Count);
+            foreach (Sorter sorter in Sorters)
             {
-                if (sorter.handlesChest(args.Player.ActiveChest))
+                if (sorter.handlesChest(player.ActiveChest))
                 {
-                    //args.Player.SendWarningMessage("Sorting {0}", sorter.Region.Name);
-                    sorter.sort();
+                    player.SendWarningMessage("Sorting {0}", sorter.Region.Name);
+                    await sorter.sort();
                     return;
                 }
             }
@@ -68,7 +103,7 @@ namespace ChestSort
 
         private void OnRegionCreated(TShockAPI.Hooks.RegionHooks.RegionCreatedEventArgs args)
         {
-            Sorters.Add(new Sorter(args.Region));
+            Sorters.Add(new Sorter(this, args.Region));
             //Console.WriteLine("Region Created");
         }
         private void OnRegionDeleted(TShockAPI.Hooks.RegionHooks.RegionDeletedEventArgs args)
@@ -96,44 +131,119 @@ namespace ChestSort
                 if (args.MsgID == PacketTypes.ChestOpen)
                 {
                     short ChestID = data.ReadInt16();
-                    if(Sorters is null) return;
-                    foreach (Sorter sorter in Sorters)
-                    {
-                        if (sorter.handlesChest(ChestID) && sorter.sorting)
-                        {
-                            player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
-                            args.Handled = true;
-                            return;
-                        }
-                    }
+                    args.Handled = ChestOpenHandler(player, ChestID);
                 }
                 else if (args.MsgID == PacketTypes.ChestGetContents)
                 {
-                    if(Sorters is null) return;
-                    foreach(Sorter sorter in Sorters)
-                    {
-                        if(sorter.handlesChest(data.ReadInt16(), data.ReadInt16()) && sorter.sorting)
-                        {
-                            player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
-                            args.Handled = true;
-                            return;
-                        }
-                    }
+                    short xpos = data.ReadInt16();
+                    short ypos = data.ReadInt16();
+                    args.Handled = ChestGetContentsHandler(player, xpos, ypos);
                 } else if(args.MsgID == PacketTypes.ChestItem)
                 {
                     short ChestID = data.ReadInt16();
-                    if (Sorters is null) return;
-                    foreach (Sorter sorter in Sorters)
-                    {
-                        if (sorter.handlesChest(ChestID) && sorter.sorting)
-                        {
-                            player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
-                            args.Handled = true;
-                            return;
-                        }
-                    }
+                    args.Handled = ChestItemHandler(player, ChestID);
+                    
+                }else if(args.MsgID == PacketTypes.PlaceChest)
+                {
+                    int action = data.ReadByte();
+                    short xpos = data.ReadInt16();
+                    short ypos = data.ReadInt16();
+                    short style = data.ReadInt16();
+                    short chestIDToDestroy = data.ReadInt16();
+                    args.Handled = PlaceChestHandler(player, action, xpos, ypos, style, chestIDToDestroy);
                 }
             }
+        }
+
+
+        private bool ChestOpenHandler(TSPlayer player, short ChestID)
+        {
+            InitSorters();
+            if(ChestID < 0 && player.ActiveChest >= 0)
+            {
+                ChestClose?.Invoke(this, new ChestCloseEventArgs(player, (short)player.ActiveChest));
+                Console.WriteLine("Chest close: {0}", player.ActiveChest);
+                return false;
+            }
+
+            Console.WriteLine("Chest Open: {0}", ChestID);
+            foreach (Sorter sorter in Sorters)
+            {
+                if (sorter.handlesChest(ChestID) && sorter.sorting)
+                {
+                    player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool ChestGetContentsHandler(TSPlayer player, short xpos, short ypos)
+        {
+            InitSorters();
+            Console.WriteLine("Get Contents: ({0}, {1})", xpos, ypos);
+            foreach (Sorter sorter in Sorters)
+            {
+                if (sorter.handlesChest(xpos, ypos) && sorter.sorting)
+                {
+                    player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool ChestItemHandler(TSPlayer player, short ChestID)
+        {
+            InitSorters();
+            Console.WriteLine("Chest Item: {0}", ChestID);
+            foreach (Sorter sorter in Sorters)
+            {
+                if (sorter.handlesChest(ChestID) && sorter.sorting)
+                {
+                    player.SendWarningMessage("That chest is currently being sorted. Please try again later.");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool PlaceChestHandler(TSPlayer player, int action, short xpos, short ypos, short style, short chestIDToDestroy)
+        {
+            InitSorters();
+            bool placeChest = (action & 0b1) != 0;
+            bool destroyChest = (action & 0b10) != 0;
+            bool placeDresser = (action & 0b100) != 0;
+            bool destroyDresser = (action & 0b1000) != 0;
+            bool placeContainers2 = (action & 0b10000) != 0;
+            bool destroyContainers2 = (action & 0b100000) != 0;
+
+            if (placeChest)
+            {
+                Console.WriteLine("Place chest: ({0}, {1}) {2}", xpos, ypos, chestIDToDestroy);
+            }
+            if (destroyChest)
+            {
+                Console.WriteLine("Destroy chest: {0}", chestIDToDestroy);
+            }
+            if (placeDresser)
+            {
+                Console.WriteLine("Place dresser: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
+            }
+            if(destroyDresser)
+            {
+                Console.WriteLine("Destroy dresser: {0}", chestIDToDestroy);
+            }
+            if (placeContainers2)
+            {
+                Console.WriteLine("Place containers2: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
+            }
+            if (destroyContainers2)
+            {
+                Console.WriteLine("Destroy containers2: {0}", chestIDToDestroy);
+            }
+
+            return false;
         }
 
         /// <summary>

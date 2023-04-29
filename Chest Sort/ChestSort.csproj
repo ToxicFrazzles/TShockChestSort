@@ -5,11 +5,17 @@
     <RootNamespace>Chest_Sort</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutPath Condition="'$(OutputPath)' == ''">$(UserProfile)\Desktop\TShock 5.1.3\ServerPlugins</OutPath>
   </PropertyGroup>
 
 
   <ItemGroup>
-    <PackageReference Include="TShock" Version="5.0.0-beta.0.1" />
+    <PackageReference Include="TShock" Version="5.1.3" />
   </ItemGroup>
+
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command='copy /Y "$(TargetDir)$(ProjectName).dll" "$(OutPath)\$(ProjectName).dll"' />
+  </Target>
 
 </Project>

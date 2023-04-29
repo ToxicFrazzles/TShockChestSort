@@ -4,9 +4,11 @@ namespace ChestSort
 {
      static class SmartChest
     {
+        // Find the next available empty slot in the chest
         public static int NextAvailableSlot(this Chest chest)
         {
-            for(int i=0; i<chest.item.Length; ++i)
+            Console.WriteLine("The NextAvailableSlot code actually is used...");
+            for (int i=0; i<chest.item.Length; ++i)
             {
                 if(chest.item[i].type == 0 || chest.item[i].stack == 0)
                 {
@@ -16,8 +18,10 @@ namespace ChestSort
             return -1;
         }
 
+        // Move the provided item in a slot of one chest 
         public static void MoveItemTo(this Chest source, int slot, Chest dest)
         {
+            Console.WriteLine("The MoveItemTo code actually is used...");
             Item item1 = source.item[slot];
             int destSlot = dest.NextAvailableSlot();
             if (destSlot < 0) return;
@@ -29,6 +33,7 @@ namespace ChestSort
 
         public static List<int> ItemsToMove(this Chest chest)
         {
+            Console.WriteLine("The ItemsToMove code actually is used...");
             List<int> list = new List<int>();
             if (chest.name == "") return list;
             for(int i=0; i<chest.item.Length; ++i)

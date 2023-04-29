@@ -7,9 +7,10 @@ namespace ChestSort
     internal class Sorter
     {
         public Region Region { get; private set; }
-        public Sorter(Region region)
+        public Sorter(ChestSortPlugin plugin, Region region)
         {
             Region = region;
+            plugin.ChestClose += ChestCloseHandler;
         }
 
         List<Chest> Chests
@@ -34,7 +35,7 @@ namespace ChestSort
 
         public bool handlesChest(int chestID)
         {
-            if (chestID < 0) return false;
+            if (chestID < 0) return false;      // A -1 indicates no chest and -2 and below indicate personal chests e.g. piggy bank, safe, defenders forge etc.
             Chest chest = Main.chest[chestID];
             if (chest == null) return false;
             return Region.InArea(chest.x, chest.y);
@@ -45,7 +46,7 @@ namespace ChestSort
             return Region.InArea(x, y);
         }
 
-        public async void sort()
+        public async Task sort()
         {
             sorting = true;
             foreach(TSPlayer player in TShock.Players)
@@ -55,6 +56,19 @@ namespace ChestSort
                 player.SendInfoMessage("The chest you were in is being sorted.");
                 player.SendData(PacketTypes.ChestOpen, "", -1, 0, 0, 0);
             }
+            await Task.Factory.StartNew(innerSort);
+            sorting = false;
+        }
+
+        private async void ChestCloseHandler(object sender, ChestCloseEventArgs args)
+        {
+            foreach(TSPlayer player in TShock.Players)
+            {
+                if (player == null || player == args.Player) continue;
+                if(handlesChest(player.ActiveChest)) return;
+            }
+            sorting = true;
+            args.Player.SendWarningMessage("Sorting the chest you were just in :)");
             await Task.Factory.StartNew(innerSort);
             sorting = false;
         }
