@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using Chest_Sort;
+using Newtonsoft.Json;
+using System.IO;
 using Terraria.ID;
 using TShockAPI;
 using TShockAPI.Configuration;
@@ -8,6 +10,7 @@ namespace ChestSort
     internal class Config
     {
         public static string DirectoryPath = Path.Combine(TShock.SavePath, "ChestSort");
+        public static string ConfigPath = Path.Combine(DirectoryPath, "config.json");
 
         public static string FilePath = Path.Combine(DirectoryPath, "trash.json");
 
@@ -20,5 +23,15 @@ namespace ChestSort
             // Trash
             2337, 2338, 2339, 1922,
         };
+
+        static public List<Categorisation> categorisations()
+        {
+            using (StreamReader r = new StreamReader(ConfigPath))
+            {
+                string json = r.ReadToEnd();
+                List<Categorisation> categories = JsonConvert.DeserializeObject<List<Categorisation>>(json);
+                return categories;
+            }
+        }
     }
 }

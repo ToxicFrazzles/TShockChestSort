@@ -30,7 +30,7 @@ namespace ChestSort
         public override string Author => "ToxicFrazzles";
         public override string Description => "A plugin to sort items in chests";
         public override string Name => "Chest Sort";
-        public override Version Version => new Version(1,0,1,0);
+        public override Version Version => new Version(1,0,2,0);
 
         private List<Sorter>? Sorters = null;
 
@@ -52,19 +52,53 @@ namespace ChestSort
         {
             // Add the "sort" command to the chat commands
             Commands.ChatCommands.Add(new Command(SortCMD, "sort"));
-
+            Commands.ChatCommands.Add(new Command(PauseSortCMD, "pausesort"));
         }
 
 
         private async void SortCMD(CommandArgs args)
         {
-            if (args.Player.ActiveChest < 0)
+            TSPlayer player = args.Player;
+            if (player.ActiveChest < 0)
             {
-                args.Player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
+                player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
                 return;
             }
 
-            await sort(args.Player);
+            InitSorters();
+
+            player.SendDebugMessage("Checking {0} regions to sort", Sorters.Count);
+            foreach (Sorter sorter in Sorters)
+            {
+                if (sorter.handlesChest(player.ActiveChest))
+                {
+                    player.SendDebugMessage("Sorting {0}", sorter.Region.Name);
+                    sorter.paused = false;
+                    await sorter.sort();
+                    return;
+                }
+            }
+        }
+
+        private async void PauseSortCMD(CommandArgs args)
+        {
+            TSPlayer player = args.Player;
+            if (player.ActiveChest < 0)
+            {
+                player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
+                return;
+            }
+            InitSorters();
+            player.SendDebugMessage("Checking {0} regions to pause sorting", Sorters.Count);
+            foreach (Sorter sorter in Sorters)
+            {
+                if (sorter.handlesChest(player.ActiveChest))
+                {
+                    player.SendDebugMessage("Pausing sorting in region: {0}", sorter.Region.Name);
+                    sorter.paused = true;
+                    return;
+                }
+            }
         }
 
 
@@ -77,23 +111,6 @@ namespace ChestSort
                 foreach (Region region in TShock.Regions.Regions)
                 {
                     Sorters.Add(new Sorter(this, region));
-                }
-            }
-        }
-
-        private async Task sort(TSPlayer player)
-        {
-            InitSorters();
-            await Task.Delay(100);
-
-            player.SendDebugMessage("Checking {0} regions to sort", Sorters.Count);
-            foreach (Sorter sorter in Sorters)
-            {
-                if (sorter.handlesChest(player.ActiveChest))
-                {
-                    player.SendDebugMessage("Sorting {0}", sorter.Region.Name);
-                    await sorter.sort();
-                    return;
                 }
             }
         }
