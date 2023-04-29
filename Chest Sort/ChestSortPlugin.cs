@@ -8,7 +8,7 @@ using TerrariaApi.Server;
 using TShockAPI.DB;
 using System.IO.Streams;
 using static MonoMod.InlineRT.MonoModRule;
-
+using Chest_Sort;
 
 public class ChestCloseEventArgs
 {
@@ -47,8 +47,6 @@ namespace ChestSort
             ServerApi.Hooks.GameInitialize.Register(this, OnGameInitialize);
             TShockAPI.Hooks.RegionHooks.RegionCreated += OnRegionCreated;
             TShockAPI.Hooks.RegionHooks.RegionDeleted += OnRegionDeleted;
-
-            //Sorters = new List<Sorter>();
         }
         private void OnGameInitialize(EventArgs args)
         {
@@ -88,12 +86,12 @@ namespace ChestSort
             InitSorters();
             await Task.Delay(100);
 
-            //player.SendWarningMessage("Checking {0} regions to sort", Sorters.Count);
+            player.SendDebugMessage("Checking {0} regions to sort", Sorters.Count);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(player.ActiveChest))
                 {
-                    //player.SendWarningMessage("Sorting {0}", sorter.Region.Name);
+                    player.SendDebugMessage("Sorting {0}", sorter.Region.Name);
                     await sorter.sort();
                     return;
                 }
@@ -104,7 +102,7 @@ namespace ChestSort
         private void OnRegionCreated(TShockAPI.Hooks.RegionHooks.RegionCreatedEventArgs args)
         {
             Sorters.Add(new Sorter(this, args.Region));
-            //Console.WriteLine("Region Created");
+            Log.Debug("Region Created");
         }
         private void OnRegionDeleted(TShockAPI.Hooks.RegionHooks.RegionDeletedEventArgs args)
         {
@@ -116,7 +114,7 @@ namespace ChestSort
                     return;
                 }
             }
-            //Console.WriteLine("Region deleted");
+            Log.Debug("Region deleted");
         }
 
         private void OnGetData(GetDataEventArgs args)
@@ -162,11 +160,11 @@ namespace ChestSort
             if(ChestID < 0 && player.ActiveChest >= 0)
             {
                 ChestClose?.Invoke(this, new ChestCloseEventArgs(player, (short)player.ActiveChest));
-                //Console.WriteLine("Chest close: {0}", player.ActiveChest);
+                Log.Debug("Chest close: {0}", player.ActiveChest);
                 return false;
             }
 
-            //Console.WriteLine("Chest Open: {0}", ChestID);
+            Log.Debug("Chest Open: {0}", ChestID);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(ChestID) && sorter.sorting)
@@ -181,7 +179,7 @@ namespace ChestSort
         private bool ChestGetContentsHandler(TSPlayer player, short xpos, short ypos)
         {
             InitSorters();
-            //Console.WriteLine("Get Contents: ({0}, {1})", xpos, ypos);
+            Log.Debug("Get Contents: ({0}, {1})", xpos, ypos);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(xpos, ypos) && sorter.sorting)
@@ -196,7 +194,7 @@ namespace ChestSort
         private bool ChestItemHandler(TSPlayer player, short ChestID)
         {
             InitSorters();
-            //Console.WriteLine("Chest Item: {0}", ChestID);
+            Log.Debug("Chest Item: {0}", ChestID);
             foreach (Sorter sorter in Sorters)
             {
                 if (sorter.handlesChest(ChestID) && sorter.sorting)

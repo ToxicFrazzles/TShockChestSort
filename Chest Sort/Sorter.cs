@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using Chest_Sort;
+using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
 
@@ -68,7 +69,7 @@ namespace ChestSort
                 if(handlesChest(player.ActiveChest)) return;
             }
             sorting = true;
-            args.Player.SendWarningMessage("Sorting the chest you were just in :)");
+            args.Player.SendDebugMessage("Sorting the chest you were just in :)");
             await Task.Factory.StartNew(innerSort);
             sorting = false;
         }
