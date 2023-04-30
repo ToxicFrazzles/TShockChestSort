@@ -1,4 +1,5 @@
 ﻿using Chest_Sort;
+using System.Diagnostics;
 using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
@@ -66,6 +67,7 @@ namespace ChestSort
         private async void ChestCloseHandler(object sender, ChestCloseEventArgs args)
         {
             if (paused) return;
+            if(!handlesChest(args.ChestID)) return;
             foreach(TSPlayer player in TShock.Players)
             {
                 if (player == null || player == args.Player) continue;
@@ -91,6 +93,8 @@ namespace ChestSort
         {
             // This 100% works
             ConsolidateItemStacks();
+            ConsolidateItems();
+            Log.Debug("Sorting {0} chests!", Chests.Count);
 
 
             List<SmartItem> remainingItems = new List<SmartItem>();
@@ -121,10 +125,11 @@ namespace ChestSort
             foreach (Chest chest in Chests)
             {
                 if (!chest.HasSortRules()) continue;
-                //Log.Debug("Chest: {0}", chest.name);
+                Log.Debug("Chest: {0}", chest.name);
                 foreach(SmartItem item in remainingItems)
                 {
                     if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
+                    //Log.Debug("Is Currency: {0}", item.Item.IsCurrency);
                     if (!chest.ShouldStoreItem(item.Item)) continue;
                     item.NewChest = chest;
                     Log.Debug("Item allocated: {0}", item.Item);
@@ -152,7 +157,7 @@ namespace ChestSort
             foreach (Chest chest in Chests)
             {
                 if (chest.HasSortRules()) continue;
-                //Log.Debug("Chest: {0}", chest);
+                Log.Debug("Chest: {0}", chest);
                 foreach (SmartItem item in remainingItems)
                 {
                     if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
@@ -199,7 +204,6 @@ namespace ChestSort
                 Log.Debug("Failed to move item: {0}", item.Item);
             }
 
-            ConsolidateItems();
         }
 
         /// <summary>

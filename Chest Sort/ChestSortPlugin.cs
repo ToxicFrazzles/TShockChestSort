@@ -30,7 +30,7 @@ namespace ChestSort
         public override string Author => "ToxicFrazzles";
         public override string Description => "A plugin to sort items in chests";
         public override string Name => "Chest Sort";
-        public override Version Version => new Version(1,0,2,0);
+        public override Version Version => new Version(1,0,3,0);
 
         private List<Sorter>? Sorters = null;
 
