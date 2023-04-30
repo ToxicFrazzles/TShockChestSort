@@ -40,7 +40,8 @@ namespace ChestSort
                     new Categorisation() { chestName = "accessories", attribute = "accessory" },
                     new Categorisation() { chestName = "bait", attribute = "bait" },
                     new Categorisation() {chestName = "banners", suffix="banner"},
-                    new Categorisation() {chestName = "pickaxes", attribute="pick"}
+                    new Categorisation() {chestName = "pickaxes", attribute="pick"},
+                    new Categorisation() {chestName="potions", suffix="potion"}
                 };
                 using (StreamWriter sw = File.AppendText(ConfigPath))
                 {
