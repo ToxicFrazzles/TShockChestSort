@@ -50,15 +50,24 @@ namespace ChestSort
             }
         }
 
-        static public List<Categorisation> categorisations()
+        public static void Reload()
         {
             PrimeDirectory();
             using (StreamReader r = new StreamReader(ConfigPath))
             {
                 string json = r.ReadToEnd();
-                List<Categorisation> categories = JsonConvert.DeserializeObject<List<Categorisation>>(json);
-                return categories;
+                try
+                {
+                    Categories = JsonConvert.DeserializeObject<List<Categorisation>>(json);
+                }catch(Newtonsoft.Json.JsonSerializationException e)
+                {
+                    Categories = new List<Categorisation>();
+                    Console.WriteLine("Error parsing categories config file. Treating it as blank...");
+                    Console.WriteLine(e.Message);
+                }
             }
         }
+
+        public static List<Categorisation> Categories { get; private set; }
     }
 }

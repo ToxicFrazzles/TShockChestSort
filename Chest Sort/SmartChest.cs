@@ -36,7 +36,7 @@ namespace ChestSort
         public static bool HasSortRules(this Chest chest)
         {
             if (chest.name == "") return false;  // Unnamed chests can have any item
-            List<Categorisation> categories = Config.categorisations();
+            List<Categorisation> categories = Config.Categories;
             foreach (Categorisation category in categories)
             {
                 if(category.AppliesToChest(chest)) return true;
@@ -46,7 +46,7 @@ namespace ChestSort
 
         public static bool ShouldStoreItem(this Chest chest, Item item) {
             if(!HasSortRules(chest)) return true;       // Chests without rules can accept any items
-            List<Categorisation> categories = Config.categorisations();
+            List<Categorisation> categories = Config.Categories;
             foreach (Categorisation category in categories)
             {
                 if (category.AppliesToChest(chest) && category.ItemMatches(item))

@@ -1,4 +1,5 @@
 ﻿using Chest_Sort;
+using NuGet.Protocol.Plugins;
 using System.Diagnostics;
 using Terraria;
 using TShockAPI;
@@ -9,10 +10,12 @@ namespace ChestSort
     internal class Sorter
     {
         public Region Region { get; private set; }
+        private ChestSortPlugin Plugin;
         public Sorter(ChestSortPlugin plugin, Region region)
         {
             Region = region;
-            plugin.ChestClose += ChestCloseHandler;
+            Plugin = plugin;
+            Plugin.ChestClose += ChestCloseHandler;
         }
 
         List<Chest> Chests
@@ -31,6 +34,13 @@ namespace ChestSort
                 }
                 return list;
             }
+        }
+
+        public void Delete()
+        {
+            // Unregister the event handler
+            Plugin.ChestClose -= ChestCloseHandler;
+            
         }
 
         public bool sorting { get; private set; }

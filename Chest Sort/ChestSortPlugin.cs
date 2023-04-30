@@ -9,6 +9,8 @@ using TShockAPI.DB;
 using System.IO.Streams;
 using static MonoMod.InlineRT.MonoModRule;
 using Chest_Sort;
+using TShockAPI.Hooks;
+using System.Diagnostics;
 
 public class ChestCloseEventArgs
 {
@@ -45,14 +47,58 @@ namespace ChestSort
         {
             ServerApi.Hooks.NetGetData.Register(this, OnGetData);
             ServerApi.Hooks.GameInitialize.Register(this, OnGameInitialize);
+            ServerApi.Hooks.ServerJoin.Register(this, OnServerJoin);
             TShockAPI.Hooks.RegionHooks.RegionCreated += OnRegionCreated;
             TShockAPI.Hooks.RegionHooks.RegionDeleted += OnRegionDeleted;
+            TShockAPI.Hooks.GeneralHooks.ReloadEvent += ReloadEventHandler;
         }
+
+
+        private void TestHook(EventArgs args)
+        {
+            Log.Debug("Test Hook Executed! Regions: {0}", TShock.Regions.Regions.Count);
+        }
+
         private void OnGameInitialize(EventArgs args)
         {
             // Add the "sort" command to the chat commands
             Commands.ChatCommands.Add(new Command(SortCMD, "sort"));
             Commands.ChatCommands.Add(new Command(PauseSortCMD, "pausesort"));
+
+        }
+
+        private void OnServerJoin(EventArgs args)
+        {
+            // Couldn't find a nice way to initialise the sorters after the game has loaded and the regions have initialised
+            // So we just initialise the sorters when the first player joins :)
+
+            if (Sorters == null)
+            {
+                // If the sorters haven't been initialised yet
+                Config.Reload();    // Reload the categories config file
+                Sorters = new List<Sorter>();   // Create a new list to store the sorters
+                foreach (Region region in TShock.Regions.Regions)
+                {
+                    // Add a sorter for each region
+                    Sorters.Add(new Sorter(this, region));
+                }
+            }
+        }
+
+        private void ReloadEventHandler(ReloadEventArgs args)
+        {
+            Log.Debug("Reload event");
+            Config.Reload();
+
+            foreach (Sorter sorter in Sorters)
+            {
+                sorter.Delete();
+            }
+            Sorters = new List<Sorter>();
+            foreach (Region region in TShock.Regions.Regions)
+            {
+                Sorters.Add(new Sorter(this, region));
+            }
         }
 
 
@@ -64,8 +110,6 @@ namespace ChestSort
                 player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
                 return;
             }
-
-            InitSorters();
 
             player.SendDebugMessage("Checking {0} regions to sort", Sorters.Count);
             foreach (Sorter sorter in Sorters)
@@ -88,7 +132,6 @@ namespace ChestSort
                 player.SendErrorMessage("Execute the command again with a chest open in the region to be sorted.");
                 return;
             }
-            InitSorters();
             player.SendDebugMessage("Checking {0} regions to pause sorting", Sorters.Count);
             foreach (Sorter sorter in Sorters)
             {
@@ -100,21 +143,6 @@ namespace ChestSort
                 }
             }
         }
-
-
-        private void InitSorters()
-        {
-            // Ensure the list of sorters has been initialised
-            if (Sorters == null)
-            {
-                Sorters = new List<Sorter>();
-                foreach (Region region in TShock.Regions.Regions)
-                {
-                    Sorters.Add(new Sorter(this, region));
-                }
-            }
-        }
-
 
         private void OnRegionCreated(TShockAPI.Hooks.RegionHooks.RegionCreatedEventArgs args)
         {
@@ -173,7 +201,6 @@ namespace ChestSort
 
         private bool ChestOpenHandler(TSPlayer player, short ChestID)
         {
-            InitSorters();
             if(ChestID < 0 && player.ActiveChest >= 0)
             {
                 ChestClose?.Invoke(this, new ChestCloseEventArgs(player, (short)player.ActiveChest));
@@ -195,7 +222,6 @@ namespace ChestSort
 
         private bool ChestGetContentsHandler(TSPlayer player, short xpos, short ypos)
         {
-            InitSorters();
             Log.Debug("Get Contents: ({0}, {1})", xpos, ypos);
             foreach (Sorter sorter in Sorters)
             {
@@ -210,7 +236,6 @@ namespace ChestSort
 
         private bool ChestItemHandler(TSPlayer player, short ChestID)
         {
-            InitSorters();
             Log.Debug("Chest Item: {0}", ChestID);
             foreach (Sorter sorter in Sorters)
             {
@@ -225,7 +250,6 @@ namespace ChestSort
 
         private bool PlaceChestHandler(TSPlayer player, int action, short xpos, short ypos, short style, short chestIDToDestroy)
         {
-            InitSorters();
             bool placeChest = (action & 0b1) != 0;
             bool destroyChest = (action & 0b10) != 0;
             bool placeDresser = (action & 0b100) != 0;
