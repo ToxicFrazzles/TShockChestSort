@@ -35,17 +35,38 @@ namespace ChestSort
             {
                 List<Categorisation> list = new List<Categorisation>
                 {
-                    new Categorisation() { chestName = "melee", attribute = "melee" },
-                    new Categorisation() { chestName = "money", attribute = "IsCurrency" },
-                    new Categorisation() { chestName = "accessories", attribute = "accessory" },
-                    new Categorisation() { chestName = "bait", attribute = "bait" },
-                    new Categorisation() {chestName = "banners", suffix="banner"},
-                    new Categorisation() {chestName = "pickaxes", attribute="pick"},
-                    new Categorisation() {chestName="potions", suffix="potion"}
+                    new Categorisation() { ChestName = "pickaxes", Attributes=new List<string>(){"pick" } },
+                    new Categorisation() { ChestName = "axes", Attributes=new List<string>(){"axe"}},
+                    new Categorisation() { ChestName = "hammers", Attributes=new List<string>(){ "hammer"} },
+                    new Categorisation() {ChestName = "ammo", Attributes=new List<string>(){"ammo"} },
+                    new Categorisation() { ChestName = "melee", Attributes = new List<string>(){"melee"} },
+                    new Categorisation() { ChestName = "ranged", Attributes=new List<string>(){"ranged"} },
+                    new Categorisation() { ChestName = "magic", Attributes=new List<string>(){"magic"} },
+                    new Categorisation() { ChestName = "summon", Attributes=new List<string>(){"summon", "sentry"} },
+                    new Categorisation() { ChestName = "money", Attributes = new List <string>() { "IsCurrency" } },
+                    new Categorisation() { ChestName = "accessories", Attributes = new List <string>() { "accessory" } },
+                    new Categorisation() { ChestName = "bait", Attributes = new List <string>() { "bait" } },
+                    new Categorisation() { ChestName = "banners", Suffixes=new List <string>() { "banner" }},
+                    new Categorisation() { ChestName="potions", Suffixes=new List <string>() { "potion" }},
+                    new Categorisation() { ChestName = "blocks", Suffixes=new List <string>() {"block"}},
+                    new Categorisation() {ChestName="walls", Suffixes=new List<string>(){"wall", "fence"}},
+                    new Categorisation() {ChestName="wood", Suffixes=new List<string>(){"wood"}, ItemNames=new List<string>(){"rich mahogany"} },
+                    new Categorisation() {ChestName="platforms", Suffixes=new List<string>(){"platform"} },
+                    new Categorisation() {ChestName="seeds", Suffixes=new List<string>(){"seeds" } },
+                    new Categorisation() {ChestName="ingots", Suffixes=new List<string>() {"bar"}},
+                    new Categorisation() {ChestName="ores", Suffixes=new List<string>(){"ore"}, ItemNames=new List<string>(){"obsidian"} },
+                    new Categorisation() {ChestName="chests", Suffixes=new List<string>(){"chest"} },
+                    new Categorisation() {ChestName="gems", ItemNames=new List<string>(){"ruby", "diamond", "sapphire", "emerald", "topaz", "amber", "amethyst", "amber gemcorn", "amethyst gemcorn", "diamond gemcorn", "emerald gemcorn", "ruby gemcorn", "sapphire gemcorn", "topaz gemcorn"}}
                 };
                 using (StreamWriter sw = File.AppendText(ConfigPath))
                 {
-                    sw.Write(JsonConvert.SerializeObject(list));
+                    sw.Write(JsonConvert.SerializeObject(
+                        list, 
+                        Formatting.Indented, 
+                        new JsonSerializerSettings{
+                        NullValueHandling = NullValueHandling.Ignore
+                        }
+                    ));
                 }
             }
         }

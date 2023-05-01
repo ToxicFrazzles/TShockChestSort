@@ -32,7 +32,7 @@ namespace ChestSort
         public override string Author => "ToxicFrazzles";
         public override string Description => "A plugin to sort items in chests";
         public override string Name => "Chest Sort";
-        public override Version Version => new Version(1,0,3,1);
+        public override Version Version => new Version(1,0,4,0);
 
         private List<Sorter>? Sorters = null;
 
@@ -259,27 +259,27 @@ namespace ChestSort
 
             if (placeChest)
             {
-                Console.WriteLine("Place chest: ({0}, {1}) {2}", xpos, ypos, chestIDToDestroy);
+                Log.Debug("Place chest: ({0}, {1}) {2}", xpos, ypos, chestIDToDestroy);
             }
             if (destroyChest)
             {
-                Console.WriteLine("Destroy chest: {0}", chestIDToDestroy);
+                Log.Debug("Destroy chest: {0}", chestIDToDestroy);
             }
             if (placeDresser)
             {
-                Console.WriteLine("Place dresser: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
+                Log.Debug("Place dresser: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
             }
             if(destroyDresser)
             {
-                Console.WriteLine("Destroy dresser: {0}", chestIDToDestroy);
+                Log.Debug("Destroy dresser: {0}", chestIDToDestroy);
             }
             if (placeContainers2)
             {
-                Console.WriteLine("Place containers2: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
+                Log.Debug("Place containers2: ({0}, {1}) {2}", xpos, ypos,chestIDToDestroy);
             }
             if (destroyContainers2)
             {
-                Console.WriteLine("Destroy containers2: {0}", chestIDToDestroy);
+                Log.Debug("Destroy containers2: {0}", chestIDToDestroy);
             }
 
             return false;

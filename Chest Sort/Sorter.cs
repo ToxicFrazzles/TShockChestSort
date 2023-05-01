@@ -132,22 +132,24 @@ namespace ChestSort
             remainingItems.RemoveAll(x => x.NewChest != null);
 
             // Allocate items to the chests with sort rules first
-            foreach (Chest chest in Chests)
+            foreach(Categorisation category in Config.Categories)
             {
-                if (!chest.HasSortRules()) continue;
-                Log.Debug("Chest: {0}", chest.name);
-                foreach(SmartItem item in remainingItems)
+                foreach(Chest chest in Chests)
                 {
-                    if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
-                    //Log.Debug("Is Currency: {0}", item.Item.IsCurrency);
-                    if (!chest.ShouldStoreItem(item.Item)) continue;
-                    item.NewChest = chest;
-                    Log.Debug("Item allocated: {0}", item.Item);
-                    allocatedItems.Add(item);
+                    if (!category.AppliesToChest(chest)) continue;
+                    Log.Debug("Chest: {0}", chest.name);
+                    foreach (SmartItem item in remainingItems)
+                    {
+                        if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
+                        //Log.Debug("Is Currency: {0}", item.Item.IsCurrency);
+                        if (!chest.ShouldStoreItem(item.Item)) continue;
+                        item.NewChest = chest;
+                        Log.Debug("Item allocated: {0}", item.Item);
+                        allocatedItems.Add(item);
+                    }
+                    remainingItems.RemoveAll(x => x.NewChest != null);
                 }
-                remainingItems.RemoveAll(x => x.NewChest != null);
             }
-
 
             Log.Debug("Allocated items to chests with sort rules. Items left to allocate: {0}", remainingItems.Count);
 

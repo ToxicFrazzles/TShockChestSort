@@ -5,32 +5,64 @@ namespace Chest_Sort
 {
     internal class Categorisation
     {
-        public string? chestName { get; set; }
-        public string? suffix { get; set; }
-        public string? attribute { get; set; }
+        public string? ChestName { get; set; }
+        public List<string>? Suffixes { get; set; }
+        public List<string>? Attributes { get; set; }
 
-        public bool ItemMatches(Item item)
+        public List<string>? ItemNames { get; set; }
+
+        private bool ItemHasSuffix(Item item)
         {
-            if (suffix != null && item.Name.ToLower().EndsWith(suffix.ToLower())) return true;
-            if(attribute != null)
+            string itemName = item.Name.ToLower();
+            if(Suffixes == null) return false; 
+            foreach(string suffix in Suffixes)
             {
-                object? prop = item.GetType().GetField(attribute)?.GetValue(item);
-                if(prop != null)
+                if (itemName.EndsWith(suffix.ToLower())) return true;
+            }
+            return false;
+        }
+
+        private bool ItemHasAttribute(Item item)
+        {
+            if(Attributes == null) return false;
+            foreach(string attr in Attributes)
+            {
+                object? prop = item.GetType().GetField(attr)?.GetValue(item);
+                if (prop != null && Convert.ToBoolean(prop))
                 {
-                    return Convert.ToBoolean(prop);
+                    return true;
                 }
-                prop = item.GetType().GetProperty(attribute)?.GetValue(item, null);
-                if(prop != null)
+                prop = item.GetType().GetProperty(attr)?.GetValue(item, null);
+                if (prop != null && Convert.ToBoolean(prop))
                 {
-                    return Convert.ToBoolean(prop);
+                    return true;
                 }
             }
             return false;
         }
 
+        private bool ItemHasName(Item item)
+        {
+            if(ItemNames == null) return false;
+            foreach(string name in ItemNames)
+            {
+                if(item.Name.ToLower() == name.ToLower()) return true;
+            }
+            return false;
+        }
+
+        public bool ItemMatches(Item item)
+        {
+            if(ItemHasName(item)) return true;
+            if(ItemHasSuffix(item)) return true;
+            if(ItemHasAttribute(item)) return true;
+            return false;
+        }
+
         public bool AppliesToChest(Chest chest)
         {
-            return chest.name.ToLower() == chestName.ToLower();
+            if(ChestName == null) return false;
+            return chest.name.ToLower() == ChestName.ToLower();
         }
     }
 }
