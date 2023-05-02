@@ -96,6 +96,7 @@ namespace ChestSort
             {
                 if (item.NewChest == chest) result -= 1;
             }
+            Log.Debug("Chest \"{0}\" has {1} free slots", chest, result);
             return result;
         }
 
@@ -127,6 +128,7 @@ namespace ChestSort
                 if(item.CanRemain && item.Chest.HasSortRules())
                 {
                     item.NewChest = item.Chest;
+                    allocatedItems.Add(item);
                 }
             }
             remainingItems.RemoveAll(x => x.NewChest != null);
@@ -160,6 +162,7 @@ namespace ChestSort
                 if (item.CanRemain)
                 {
                     item.NewChest = item.Chest;
+                    allocatedItems.Add(item);
                 }
             }
             remainingItems.RemoveAll(x => x.NewChest != null);
