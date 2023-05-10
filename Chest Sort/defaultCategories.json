@@ -1,0 +1,242 @@
+[
+  {
+    "ChestName": "pickaxes",
+    "Attributes": [
+      "pick"
+    ]
+  },
+  {
+    "ChestName": "axes",
+    "Attributes": [
+      "axe"
+    ]
+  },
+  {
+    "ChestName": "hammers",
+    "Attributes": [
+      "hammer"
+    ]
+  },
+  {
+    "ChestName": "explosives",
+    "Suffixes": [
+      "nade",
+      "dynamite",
+      "bomb"
+    ]
+  },
+  {
+    "ChestName": "money",
+    "Attributes": [
+      "IsCurrency"
+    ]
+  },
+  {
+    "ChestName": "melee",
+    "Attributes": [
+      "melee"
+    ]
+  },
+  {
+    "ChestName": "ranged",
+    "Attributes": [
+      "ranged"
+    ]
+  },
+  {
+    "ChestName": "magic",
+    "Attributes": [
+      "magic"
+    ]
+  },
+  {
+    "ChestName": "summon",
+    "Attributes": [
+      "summon",
+      "sentry"
+    ]
+  },
+  {
+    "ChestName": "accessories",
+    "Attributes": [
+      "accessory"
+    ]
+  },
+  {
+    "ChestName": "bait",
+    "Attributes": [
+      "bait"
+    ]
+  },
+  {
+    "ChestName": "banners",
+    "Suffixes": [
+      "banner"
+    ]
+  },
+  {
+    "ChestName": "potions",
+    "Suffixes": [
+      "potion"
+    ],
+    "ItemNames": [
+      "Potion of Return"
+    ]
+  },
+  {
+    "ChestName": "blocks",
+    "Suffixes": [
+      "block",
+      "brick"
+    ],
+    "ItemNames": [
+      "hive"
+    ]
+  },
+  {
+    "ChestName": "walls",
+    "Suffixes": [
+      "wall",
+      "fence"
+    ]
+  },
+  {
+    "ChestName": "wood",
+    "Suffixes": [
+      "wood"
+    ],
+    "ItemNames": [
+      "rich mahogany"
+    ]
+  },
+  {
+    "ChestName": "platforms",
+    "Suffixes": [
+      "platform"
+    ]
+  },
+  {
+    "ChestName": "seeds",
+    "Suffixes": [
+      "seeds"
+    ]
+  },
+  {
+    "ChestName": "ingots",
+    "Suffixes": [
+      "bar"
+    ]
+  },
+  {
+    "ChestName": "ores",
+    "Suffixes": [
+      "ore"
+    ],
+    "ItemNames": [
+      "obsidian",
+      "hellstone",
+      "meteorite"
+    ]
+  },
+  {
+    "ChestName": "chests",
+    "Suffixes": [
+      "chest"
+    ]
+  },
+  {
+    "ChestName": "gems",
+    "ItemNames": [
+      "ruby",
+      "diamond",
+      "sapphire",
+      "emerald",
+      "topaz",
+      "amber",
+      "amethyst",
+      "amber gemcorn",
+      "amethyst gemcorn",
+      "diamond gemcorn",
+      "emerald gemcorn",
+      "ruby gemcorn",
+      "sapphire gemcorn",
+      "topaz gemcorn"
+    ]
+  },
+  {
+    "ChestName": "health",
+    "ItemNames": [
+      "life crystal",
+      "life fruit"
+    ]
+  },
+  {
+    "ChestName": "statues",
+    "Suffixes": [
+      "statue"
+    ]
+  },
+  {
+    "ChestName": "traps",
+    "Suffixes": [
+      "trap",
+      "pressure plate",
+      "wrench"
+    ],
+    "ItemNames": [
+      "geyser",
+      "detonator",
+      "explosives",
+      "wire",
+      "wire cutter"
+    ]
+  },
+  {
+    "ChestName": "vanity",
+    "Attributes": [
+      "vanity"
+    ]
+  },
+  {
+    "ChestName": "head",
+    "Attributes": [
+      "headSlot"
+    ]
+  },
+  {
+    "ChestName": "body",
+    "Attributes": [
+      "bodySlot"
+    ]
+  },
+  {
+    "ChestName": "legs",
+    "Attributes": [
+      "legSlot"
+    ]
+  },
+  {
+    "ChestName": "mounts",
+    "Attributes": [
+      "mountType"
+    ]
+  },
+  {
+    "ChestName": "ammo",
+    "Attributes": [
+      "ammo"
+    ]
+  },
+  {
+    "ChestName": "fish",
+    "Attributes": [
+      "IsFish"
+    ]
+  },
+  {
+    "ChestName": "materials",
+    "Attributes": [
+      "material"
+    ]
+  }
+]

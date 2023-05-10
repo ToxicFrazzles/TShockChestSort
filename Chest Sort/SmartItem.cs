@@ -7,9 +7,48 @@ using System.Text;
 using System.Threading.Tasks;
 using ChestSort;
 using Mono.Cecil;
+using System.Reflection;
 
 namespace Chest_Sort
 {
+    internal static class ItemExtensions
+    {
+        public static bool IsFish(this Item item)
+        {
+            Console.WriteLine("{0}: {1}",item, item.type);
+            if (item.type == 2290) return true;
+            else if (item.type >= 2297 && item.type <= 2321) return true;
+            else if (item.type == 4401) return true;
+            else if (item.type >= 2450 && item.type <= 2488) return true;
+            return false;
+        }
+
+        public static IEnumerable<MethodInfo> GetExtensionMethods(this Item item)
+        {
+            Assembly assembly = typeof(ItemExtensions).Assembly;
+            var isGenericTypeDefinition = typeof(Item).IsGenericType && typeof(Item).IsTypeDefinition;
+            var query = from type in assembly.GetTypes()
+                        where type.IsSealed && !type.IsGenericType && !type.IsNested
+                        from method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                        where method.IsDefined(typeof(ExtensionAttribute), false)
+                        where isGenericTypeDefinition
+                            ? method.GetParameters()[0].ParameterType.IsGenericType && method.GetParameters()[0].ParameterType.GetGenericTypeDefinition() == typeof(Item)
+                            : method.GetParameters()[0].ParameterType == typeof(Item)
+                        select method;
+            return query;
+        }
+
+        public static MethodInfo? GetExtensionMethod(this Item item, string name)
+        {
+            var methods = GetExtensionMethods(item);
+            foreach( MethodInfo method in methods)
+            {
+                if (method.Name == name) return method;
+            }
+            return null;
+        }
+    }
+
     internal class SmartItem
     {
         public SmartItem(Chest chest, int slot)

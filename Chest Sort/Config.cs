@@ -1,6 +1,7 @@
 ﻿using Chest_Sort;
 using Newtonsoft.Json;
 using System.IO;
+using System.Reflection;
 using Terraria.ID;
 using TShockAPI;
 using TShockAPI.Configuration;
@@ -10,7 +11,7 @@ namespace ChestSort
     internal class Config
     {
         public static string DirectoryPath = Path.Combine(TShock.SavePath, "ChestSort");
-        public static string ConfigPath = Path.Combine(DirectoryPath, "config.json");
+        public static string ConfigPath = Path.Combine(DirectoryPath, "categories.json");
 
         public static string FilePath = Path.Combine(DirectoryPath, "trash.json");
 
@@ -33,40 +34,46 @@ namespace ChestSort
 
             if (!File.Exists(ConfigPath))
             {
-                List<Categorisation> list = new List<Categorisation>
+                var assembly = Assembly.GetExecutingAssembly();
+                string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("defaultCategories.json"));
+
+                List<Categorisation>? list = null;
+
+                using (Stream? stream = assembly.GetManifestResourceStream(resourceName))
                 {
-                    new Categorisation() { ChestName = "pickaxes", Attributes=new List<string>(){"pick" } },
-                    new Categorisation() { ChestName = "axes", Attributes=new List<string>(){"axe"}},
-                    new Categorisation() { ChestName = "hammers", Attributes=new List<string>(){ "hammer"} },
-                    new Categorisation() {ChestName = "ammo", Attributes=new List<string>(){"ammo"} },
-                    new Categorisation() { ChestName = "melee", Attributes = new List<string>(){"melee"} },
-                    new Categorisation() { ChestName = "ranged", Attributes=new List<string>(){"ranged"} },
-                    new Categorisation() { ChestName = "magic", Attributes=new List<string>(){"magic"} },
-                    new Categorisation() { ChestName = "summon", Attributes=new List<string>(){"summon", "sentry"} },
-                    new Categorisation() { ChestName = "money", Attributes = new List <string>() { "IsCurrency" } },
-                    new Categorisation() { ChestName = "accessories", Attributes = new List <string>() { "accessory" } },
-                    new Categorisation() { ChestName = "bait", Attributes = new List <string>() { "bait" } },
-                    new Categorisation() { ChestName = "banners", Suffixes=new List <string>() { "banner" }},
-                    new Categorisation() { ChestName="potions", Suffixes=new List <string>() { "potion" }},
-                    new Categorisation() { ChestName = "blocks", Suffixes=new List <string>() {"block"}},
-                    new Categorisation() {ChestName="walls", Suffixes=new List<string>(){"wall", "fence"}},
-                    new Categorisation() {ChestName="wood", Suffixes=new List<string>(){"wood"}, ItemNames=new List<string>(){"rich mahogany"} },
-                    new Categorisation() {ChestName="platforms", Suffixes=new List<string>(){"platform"} },
-                    new Categorisation() {ChestName="seeds", Suffixes=new List<string>(){"seeds" } },
-                    new Categorisation() {ChestName="ingots", Suffixes=new List<string>() {"bar"}},
-                    new Categorisation() {ChestName="ores", Suffixes=new List<string>(){"ore"}, ItemNames=new List<string>(){"obsidian"} },
-                    new Categorisation() {ChestName="chests", Suffixes=new List<string>(){"chest"} },
-                    new Categorisation() {ChestName="gems", ItemNames=new List<string>(){"ruby", "diamond", "sapphire", "emerald", "topaz", "amber", "amethyst", "amber gemcorn", "amethyst gemcorn", "diamond gemcorn", "emerald gemcorn", "ruby gemcorn", "sapphire gemcorn", "topaz gemcorn"}}
-                };
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string r = reader.ReadToEnd(); //Make string equal to full file
+                        try
+                        {
+                            list = JsonConvert.DeserializeObject<List<Categorisation>>(r);
+                        }
+                        catch (Newtonsoft.Json.JsonSerializationException e)
+                        {
+                            Categories = new List<Categorisation>();
+                            Console.WriteLine("Error parsing default config file. Treating it as blank...");
+                            Console.WriteLine(e.Message);
+                        }
+                    }
+                }
+                
+                
                 using (StreamWriter sw = File.AppendText(ConfigPath))
                 {
-                    sw.Write(JsonConvert.SerializeObject(
-                        list, 
-                        Formatting.Indented, 
-                        new JsonSerializerSettings{
-                        NullValueHandling = NullValueHandling.Ignore
+                    using(JsonTextWriter jw = new JsonTextWriter(sw))
+                    {
+                        jw.Formatting = Formatting.Indented;
+                        jw.IndentChar = '\t';
+                        jw.Indentation = 1;
+
+                        JsonSerializer serializer = new JsonSerializer();
+                        if(list == null)
+                        {
+                            list = new List<Categorisation>();
                         }
-                    ));
+                        serializer.NullValueHandling = NullValueHandling.Ignore;
+                        serializer.Serialize(jw, list);
+                    }
                 }
             }
         }

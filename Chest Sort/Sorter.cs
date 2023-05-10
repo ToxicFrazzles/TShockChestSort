@@ -96,9 +96,26 @@ namespace ChestSort
             {
                 if (item.NewChest == chest) result -= 1;
             }
-            Log.Debug("Chest \"{0}\" has {1} free slots", chest, result);
+            //Log.Debug("Chest \"{0}\" has {1} free slots", chest, result);
             return result;
         }
+
+        private List<Categorisation> ApplicableCategories { get
+            {
+                List<Categorisation> result = new List<Categorisation>();
+                foreach(Categorisation cat in Config.Categories)
+                {
+                    foreach(Chest chest in Chests)
+                    {
+                        if (cat.AppliesToChest(chest))
+                        {
+                            result.Add(cat);
+                            break;
+                        }
+                    }
+                }
+                return result;
+            } }
 
         private void innerSort()
         {
@@ -123,7 +140,7 @@ namespace ChestSort
 
             // Avoid moving items from perfectly valid chests
             // Let items already in chests with sort rules to stay where they are
-            foreach(SmartItem item in remainingItems)
+            /*foreach(SmartItem item in remainingItems)
             {
                 if(item.CanRemain && item.Chest.HasSortRules())
                 {
@@ -131,19 +148,24 @@ namespace ChestSort
                     allocatedItems.Add(item);
                 }
             }
-            remainingItems.RemoveAll(x => x.NewChest != null);
+            remainingItems.RemoveAll(x => x.NewChest != null);*/
 
             // Allocate items to the chests with sort rules first
-            foreach(Categorisation category in Config.Categories)
+            foreach(Categorisation category in ApplicableCategories)
             {
                 foreach(Chest chest in Chests)
                 {
                     if (!category.AppliesToChest(chest)) continue;
-                    Log.Debug("Chest: {0}", chest.name);
+                    //Log.Debug("Chest: {0}", chest.name);
                     foreach (SmartItem item in remainingItems)
                     {
+                        if (category.AppliesToChest(item.Chest) && category.ItemMatches(item.Item))
+                        {   // Item is already in a chest in this category. Allocate to existing chest and continue.
+                            item.NewChest = item.Chest;
+                            allocatedItems.Add(item);
+                            continue;
+                        }
                         if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
-                        //Log.Debug("Is Currency: {0}", item.Item.IsCurrency);
                         if (!chest.ShouldStoreItem(item.Item)) continue;
                         item.NewChest = chest;
                         Log.Debug("Item allocated: {0}", item.Item);
@@ -172,7 +194,7 @@ namespace ChestSort
             foreach (Chest chest in Chests)
             {
                 if (chest.HasSortRules()) continue;
-                Log.Debug("Chest: {0}", chest);
+                //Log.Debug("Chest: {0}", chest);
                 foreach (SmartItem item in remainingItems)
                 {
                     if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
@@ -227,52 +249,62 @@ namespace ChestSort
         /// </summary>
         private void ConsolidateItemStacks()
         {
-            List<Item> items = new List<Item>();
-            foreach (Chest chest in Chests)
+            bool again = true;
+            while (again)
             {
-                for (int i = 0; i < chest.item.Length; ++i)
+                again = false;
+                List<Item> items = new List<Item>();
+                foreach (Chest chest in Chests)
                 {
-                    Item item = chest.item[i];
-                    if (item == null || item.IsAir) continue;    // Item is an empty slot (no type or no quantity)
-                    if (Config.TrashItems.Contains(item.type))
+                    for (int i = 0; i < chest.item.Length; ++i)
                     {
-                        // If the item is a trash item, delete it
-                        chest.item[i].type = 0;
-                        chest.item[i].stack = 0;
-                        chest.item[i].netID = 0;
-                        continue;
+                        Item item = chest.item[i];
+                        if (item == null || item.IsAir) continue;    // Item is an empty slot (no type or no quantity)
+                        if (Config.TrashItems.Contains(item.type))
+                        {
+                            // If the item is a trash item, delete it
+                            chest.item[i].TurnToAir();
+                            continue;
+                        }
+                        // Add the item to the list of all items in the region
+                        items.Add(item);
                     }
-                    // Add the item to the list of all items in the region
-                    items.Add(item);
                 }
-            }
 
-            // Attempt to put the smaller stacks of items onto the larger stacks
-            // Sort item stacks highest to lowest
-            items.Sort((y, x) => x.stack.CompareTo(y.stack));
-            for (int i = 0; i < items.Count - 1; ++i)
-            {
-                Item item1 = items[i];      // Bigger item stack
-                for (int j = items.Count - 1; j > i; --j)
+                // Attempt to put the smaller stacks of items onto the larger stacks
+                // Sort item stacks highest to lowest
+                items.Sort((y, x) => x.stack.CompareTo(y.stack));
+                for (int i = 0; i < items.Count - 1; ++i)
                 {
-                    // Work back to front through the sorted items list (ascending order)
-                    Item item2 = items[j];
-                    if (item2.type != item1.type) continue;     // If the bigger stack and smaller stack are different items, skip further processing
-
-                    if (item1.stack + item2.stack <= item1.maxStack)
+                    Item item1 = items[i];      // Bigger item stack
+                    if(item1.IsACoin && item1.stack == 100 && item1.type != 74)     // If the item is 100 of a coin other than platinum
                     {
-                        // If the smaller stack can fit into the bigger stack, add the small stack quantity to the large stack and set the small stack quantity to 0
-                        item1.stack += item2.stack;
-                        item2.stack = 0;
-                        item2.type = 0;
-                        item2.netID = 0;
+                        item1.type += 1;        // Turn it into the next coin
+                        item1.netID += 1;
+                        item1.SetDefaults(item1.type);
+                        item1.stack = 1;        // Make sure there's only 1 of them
+                        again = true;           // Make the whole stack consolidation run again to potentially reduce the newly created coin stack
+                        continue;               // Don't try to stack anything onto this
                     }
-                    else
+                    for (int j = items.Count - 1; j > i; --j)
                     {
-                        // If the smaller stack cannot entirely fit into the bigger stack, set the bigger stack to the stack limit and remove the difference from the smaller stack
-                        item2.stack -= item1.maxStack - item1.stack;
-                        item1.stack = item1.maxStack;
-                        break;
+                        // Work back to front through the sorted items list (ascending order)
+                        Item item2 = items[j];
+                        if (item2.type != item1.type) continue;     // If the bigger stack and smaller stack are different items, skip further processing
+
+                        if (item1.stack + item2.stack <= item1.maxStack)
+                        {
+                            // If the smaller stack can fit into the bigger stack, add the small stack quantity to the large stack and set the small stack quantity to 0
+                            item1.stack += item2.stack;
+                            item2.TurnToAir();
+                        }
+                        else
+                        {
+                            // If the smaller stack cannot entirely fit into the bigger stack, set the bigger stack to the stack limit and remove the difference from the smaller stack
+                            item2.stack -= item1.maxStack - item1.stack;
+                            item1.stack = item1.maxStack;
+                            break;
+                        }
                     }
                 }
             }
@@ -285,7 +317,10 @@ namespace ChestSort
             {
                 for (int i = 0; i < chest.item.Length; ++i)
                 {
+                    Item item = chest.item[i];
+                    if(item.IsAir) continue;
                     Chest? dest = ChestWithMostOf(chest.item[i]);
+                    //Log.Debug("{0} has a value of {1} and a shop price of {2}",item.Name, item.value, item.GetStoreValue());
                     if (dest == null || dest == chest) continue;
                     chest.MoveItemTo(i, dest);
                 }
