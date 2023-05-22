@@ -59,7 +59,7 @@ namespace ChestSort
             return Region.InArea(x, y);
         }
 
-        public async Task sort()
+        public async Task sortCmd()
         {
             if(paused) return;
             sorting = true;
@@ -70,7 +70,7 @@ namespace ChestSort
                 player.SendInfoMessage("The chest you were in is being sorted.");
                 player.SendData(PacketTypes.ChestOpen, "", -1, 0, 0, 0);
             }
-            await Task.Factory.StartNew(innerSort);
+            await Task.Factory.StartNew(sort);
             sorting = false;
         }
 
@@ -85,7 +85,7 @@ namespace ChestSort
             }
             sorting = true;
             args.Player.SendDebugMessage("Sorting the chest you were just in :)");
-            await Task.Factory.StartNew(innerSort);
+            await Task.Factory.StartNew(sort);
             sorting = false;
         }
 
@@ -117,11 +117,71 @@ namespace ChestSort
                 return result;
             } }
 
-        private void innerSort()
+        private void sort()
         {
-            // This 100% works
+            SellExcess();
             ConsolidateItemStacks();
             ConsolidateItems();
+            MainSort();
+        }
+
+        private void SellExcess()
+        {
+            List<SmartItem> items = new List<SmartItem>();
+            foreach (Chest chest in Chests)
+            {
+                for (int i = 0; i < chest.item.Length; ++i)
+                {
+                    if (chest.item[i].IsAir) continue;
+                    items.Add(new SmartItem(chest, i));
+                }
+            }
+
+            List<ItemCounter> itemCounters = new List<ItemCounter>();
+            while(items.Count > 0)
+            {
+                List<SmartItem> list = new List<SmartItem>();
+                SmartItem mItem = items.First();
+                foreach(SmartItem item in items)
+                {
+                    if(item.Item.type == mItem.Item.type && item.Item.prefix == mItem.Item.prefix)
+                    {
+                        list.Add(item);
+                    }
+                }
+                items.RemoveAll(x => list.Contains(x));
+                itemCounters.Add(new ItemCounter(list));
+            }
+
+            foreach(Categorisation cat in ApplicableCategories)
+            {
+                // If the items in this category cannot be sold, continue
+                if(cat.CanSell == null || !cat.CanSell.Value) continue;
+                if(cat.SellThreshold == null || cat.SellThreshold.Value <= 0) continue;
+
+
+                List<ItemCounter> done = new List<ItemCounter>();
+                foreach(ItemCounter counter in itemCounters) {
+                    if (!cat.ItemMatches(counter.SmartItems.First().Item)) { 
+                        done.Add(counter);
+                        continue; 
+                    }
+                    if (cat.SellThreshold <= counter.TotalStacks)
+                    {
+                        done.Add(counter);
+                        continue;
+                    }
+                    // TODO: Find space to put coins, delete excess, add coins to chest.
+                }
+                itemCounters.RemoveAll(x => done.Contains(x));
+            }
+        }
+
+        /// <summary>
+        /// Sorts items into the chests which they belong in
+        /// </summary>
+        private void MainSort()
+        {
             Log.Debug("Sorting {0} chests!", Chests.Count);
 
 
@@ -136,35 +196,40 @@ namespace ChestSort
                 }
             }
 
+            List<Chest> sortedChests = new List<Chest>();
+            List<Chest> unsortedChests = new List<Chest>();
+            foreach(Chest chest in Chests)
+            {
+                if (chest.HasSortRules()) sortedChests.Add(chest);
+                else unsortedChests.Add(chest);
+            }
+
             Log.Debug("Items to allocate: {0}", remainingItems.Count);
 
             // Avoid moving items from perfectly valid chests
             // Let items already in chests with sort rules to stay where they are
-            /*foreach(SmartItem item in remainingItems)
+            foreach (Categorisation cat in ApplicableCategories)
             {
-                if(item.CanRemain && item.Chest.HasSortRules())
+                foreach (SmartItem item in remainingItems)
                 {
-                    item.NewChest = item.Chest;
-                    allocatedItems.Add(item);
+                    if (cat.ItemMatches(item.Item) && cat.AppliesToChest(item.Chest))
+                    {
+                        item.NewChest = item.Chest;
+                        allocatedItems.Add(item);
+                    }
                 }
+                remainingItems.RemoveAll(x => x.NewChest != null);
             }
-            remainingItems.RemoveAll(x => x.NewChest != null);*/
 
             // Allocate items to the chests with sort rules first
             foreach(Categorisation category in ApplicableCategories)
             {
-                foreach(Chest chest in Chests)
+                foreach(Chest chest in sortedChests)
                 {
                     if (!category.AppliesToChest(chest)) continue;
                     //Log.Debug("Chest: {0}", chest.name);
                     foreach (SmartItem item in remainingItems)
                     {
-                        if (category.AppliesToChest(item.Chest) && category.ItemMatches(item.Item))
-                        {   // Item is already in a chest in this category. Allocate to existing chest and continue.
-                            item.NewChest = item.Chest;
-                            allocatedItems.Add(item);
-                            continue;
-                        }
                         if (AllocatedChestFreeSlots(allocatedItems, chest) == 0) break;
                         if (!chest.ShouldStoreItem(item.Item)) continue;
                         item.NewChest = chest;
@@ -191,9 +256,8 @@ namespace ChestSort
 
 
             // Allocate remaining items to the chests without sort rules
-            foreach (Chest chest in Chests)
+            foreach (Chest chest in unsortedChests)
             {
-                if (chest.HasSortRules()) continue;
                 //Log.Debug("Chest: {0}", chest);
                 foreach (SmartItem item in remainingItems)
                 {
@@ -236,6 +300,7 @@ namespace ChestSort
                     if (movedItems.Contains(other)) continue;
                     item.SwapItems(other);
                     //Log.Debug("Swapped item: {0} with: {1}", item.Item, other.Item);
+                    movedItems.Add(item);
                     break;
                 }
                 Log.Debug("Failed to move item: {0}", item.Item);
@@ -310,6 +375,9 @@ namespace ChestSort
             }
         }
 
+        /// <summary>
+        /// Attempt to place stacks of the same item in 1 chest
+        /// </summary>
         private void ConsolidateItems()
         {
             // Attempt to move all of the stacks of the same item to the chest with the most of that item in it.

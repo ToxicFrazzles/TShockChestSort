@@ -5,7 +5,7 @@
     <RootNamespace>Chest_Sort</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutPath Condition="'$(OutputPath)' == ''">$(UserProfile)\Desktop\TShock 5.1.3\ServerPlugins</OutPath>
+    <OutPath Condition="'$(OutputPath)' == ''">$(UserProfile)\Desktop\TShock\ServerPlugins</OutPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="TShock" Version="5.1.3" />
+    <PackageReference Include="TShock" Version="5.2.0" />
   </ItemGroup>
 
 

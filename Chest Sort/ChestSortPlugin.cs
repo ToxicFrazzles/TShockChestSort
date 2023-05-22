@@ -118,7 +118,7 @@ namespace ChestSort
                 {
                     player.SendDebugMessage("Sorting {0}", sorter.Region.Name);
                     sorter.paused = false;
-                    await sorter.sort();
+                    await sorter.sortCmd();
                     return;
                 }
             }
