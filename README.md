@@ -31,6 +31,6 @@ The config is a JSON file which allows you to define named chests and the catego
 
 
 ## Known issues
-* Items appearing in named chests when there's valid space in unnamed chests
 * Unknown consequences of having TShock regions overlap
-* 
+* No way to exclude a region from being sorted
+* Potential crashes with incorrect config
