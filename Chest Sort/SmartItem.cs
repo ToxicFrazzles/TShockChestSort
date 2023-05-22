@@ -15,7 +15,7 @@ namespace Chest_Sort
     {
         public static bool IsFish(this Item item)
         {
-            Console.WriteLine("{0}: {1}",item, item.type);
+            //Console.WriteLine("{0}: {1}",item, item.type);
             if (item.type == 2290) return true;
             else if (item.type >= 2297 && item.type <= 2321) return true;
             else if (item.type == 4401) return true;

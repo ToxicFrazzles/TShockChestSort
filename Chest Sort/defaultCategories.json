@@ -12,6 +12,12 @@
     ]
   },
   {
+    "ChestName": "dyes",
+    "Suffixes": [
+      "dye"
+    ]
+  },
+  {
     "ChestName": "hammers",
     "Attributes": [
       "hammer"
